@@ -1,153 +1,121 @@
 # FCM Push Lab
 
-Plain HTML/CSS/JavaScript, Firebase JS SDK **13.4.0** from gstatic, and a Python loopback server. The app provides individual/topic subscribe and unsubscribe controls and received-message logs. No npm, build, database, or Analytics. Topic membership uses a small server-side helper; service-account mode adds the optional Google auth dependency.
+A **pnpm + Vue 3 + Vite** test app with a small Node.js topic-subscription helper. No Python, database, Analytics or message-sending backend.
 
-**For sending directly from Postman to Firebase, follow [POSTMAN.md](POSTMAN.md).** Import the collection and environment from `postman/`. Every send request targets `https://fcm.googleapis.com/v1/projects/fcm-push-notification-f55e4/messages:send` with a Google OAuth Bearer token. There is no local send endpoint or helper key.
+The app manages individual/topic subscriptions and displays received messages. **Postman sends directly to Firebase HTTP v1**. Firebase JS SDK **13.4.0** stays pinned to the gstatic CDN in both the browser adapter and classic service worker.
 
-## Start
+## Quick start
+
+Use Node.js **22.12+** (Node 24 recommended) and pnpm. From the repository root:
 
 ```sh
-python3 serve.py
+pnpm install
+pnpm dev
 ```
 
-On Windows use `python serve.py` if needed. Open <http://localhost:8080>. Double-clicking `index.html` also renders the dashboard and startup instructions; push controls require localhost receiver tabs. Use **Open receiver**, then click **Subscribe** in that tab and accept notification permission. Allow dashboard popups if blocked. Use a supported desktop browser such as Chrome/Edge and allow network access to gstatic/Firebase. Blocked permission must be changed in the receiver's browser site settings.
+Open <http://localhost:8080>. The same command serves receivers at ports **8081–8084**, all bound to loopback. Vite's development WebSocket uses port **8090**. Stop old Python/Node servers occupying these ports before starting.
 
-Ports 8081–8084 are separate browser origins, with independent permissions and tokens despite shared Firebase config. Keep receivers open for live dashboard updates. Receivers opened independently have no dashboard connection; after refreshing the dashboard, reopen receivers through its buttons. Logs are in memory, limited to 100 messages per view. Existing tokens are restored locally without automatically obtaining a new token. Unsubscribe deletes the FCM token; browser notification permission remains separate. Reloading after opt-out never automatically subscribes.
+Use **Open receiver** in each dashboard panel, then **Subscribe** in that top-level receiver tab. Notification permission must be requested by an explicit click. Keep receivers open for live dashboard updates. Browser permission and FCM subscription status are separate.
 
-Foreground messages log without system notifications. Background notification payloads are displayed by Firebase; data-only payloads are displayed by the worker. Hide the receiver tab (or minimize its window) to test background delivery. Closed receivers cannot forward live events. OS settings can affect system notification display.
+The four ports remain separate origins, preserving independent permissions, worker registrations, tokens and storage. Existing saved tokens are read without requesting a new token on startup. An opt-out never triggers automatic individual/topic re-subscription. Reloading the dashboard requires reopening its receivers through its buttons to reconnect.
 
-## Manual delivery test
+## Topic authentication
 
-1. Subscribe Apps 1 and 2; confirm their copied tokens differ.
-2. Send directly to App 1 using Postman or Firebase Console's notification **Send test message** dialog. Confirm only App 1 logs it. Repeat for App 2, testing both a visible foreground receiver and a hidden, open background receiver. Confirm one system notification for each background notification payload and a background log in the matching dashboard panel.
-3. Save App 1's old token, then Unsubscribe App 1. Confirm its token clears while browser permission can remain granted. Send to its old token: after revocation propagates, FCM should reject it (typically `UNREGISTERED`) and no new push should reach App 1. A push already in flight is not a valid revocation test. Confirm App 2 still receives. Reload App 1 and confirm it stays unsubscribed until Subscribe is clicked.
-4. Send this HTTP v1 request from Postman, replacing placeholders:
+Keep your existing **fcm-service-account.json** at the project root. It is Git-ignored, outside Vite's frontend root and blocked from HTTP access. Never place it in `web/public/`, frontend imports or a `VITE_*` variable.
 
-```http
-POST https://fcm.googleapis.com/v1/projects/fcm-push-notification-f55e4/messages:send
-Authorization: Bearer <OAUTH_2_ACCESS_TOKEN>
-Content-Type: application/json
+The service account needs **Firebase Cloud Messaging API Admin** (`roles/firebasecloudmessaging.admin`) in project `fcm-push-notification-f55e4`, including topic-management permissions. Enable the Firebase Cloud Messaging API.
 
-{
-  "message": {
-    "token": "<APP_1_OR_APP_2_FCM_TOKEN>",
-    "notification": {
-      "title": "Direct push test",
-      "body": "Hello from Postman"
-    },
-    "data": { "testId": "<UNIQUE_TEST_ID>" }
-  }
-}
-```
+`google-auth-library` performs signing and OAuth exchange. Tokens are cached server-side, renewed within five minutes of expiry, and shared across all receivers. A 401 causes at most one forced renewal/retry. OAuth values and private keys never enter the browser, dashboard messages, logs, or build.
 
-The Bearer token stays in Postman. Obtain it via your trusted OAuth flow with permission to send FCM messages and scope `https://www.googleapis.com/auth/firebase.messaging`. Never put OAuth tokens, private keys, or service account credentials into these files. Firebase web config and the public VAPID key are not sending credentials. Console and Postman use the FCM registration token shown here, without a custom Web Push encryption flow.
+Credential selection:
 
-Firebase background behavior: <https://firebase.google.com/docs/cloud-messaging/web/receive-messages>.
+1. `FCM_ACCESS_TOKEN`: optional manual override; does not automatically refresh.
+2. `FCM_SERVICE_ACCOUNT_FILE`: explicit service-account JSON path.
+3. `GOOGLE_APPLICATION_CREDENTIALS`: alternative JSON path.
+4. Root `fcm-service-account.json`.
 
-## Enable topic controls
-
-Topic membership needs trusted server credentials; the web SDK does not provide client-side topic subscription. The receiver calls its own Python origin, which calls Firebase's topic REST API for the fixed demo project. OAuth credentials never enter browser JavaScript, local storage, dashboard messages, or repository files. The three topic endpoints accept only exact same-origin receiver requests; the local server does not send push messages or expose OAuth tokens.
-
-### Automatic authentication with a service account (no gcloud)
-
-1. In Google Cloud Console for this Firebase project, create/select a dedicated service account. Grant the permissions required to manage FCM topic subscriptions and send messages (the **Firebase Cloud Messaging API Admin** role, `roles/firebasecloudmessaging.admin`, is a predefined option). Enable the Firebase Cloud Messaging API. Create a JSON private key if your organization's policy permits service-account keys.
-2. Save the downloaded JSON as **`fcm-service-account.json` in the project root**, alongside `serve.py`. It is automatically detected, explicitly ignored by Git, and excluded from every static-file route. Do not put its contents in `firebase-config.js`, paste it into chat, or commit it. Restrict access to your user account. You can alternatively store it outside the repository and configure its path with `FCM_SERVICE_ACCOUNT_FILE`.
-3. Install the optional Google auth dependency in a local virtual environment, clear any older environment overrides, and start the server:
+There is no gcloud or Python requirement. Clear stale overrides in PowerShell before starting if you want the root file:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-service-account.txt
 Remove-Item Env:FCM_ACCESS_TOKEN -ErrorAction SilentlyContinue
 Remove-Item Env:FCM_SERVICE_ACCOUNT_FILE -ErrorAction SilentlyContinue
 Remove-Item Env:GOOGLE_APPLICATION_CREDENTIALS -ErrorAction SilentlyContinue
-.\.venv\Scripts\python.exe serve.py
+pnpm dev
 ```
 
-For macOS/Linux, use `python3 -m venv .venv`, `.venv/bin/python -m pip install -r requirements-service-account.txt`, `unset FCM_ACCESS_TOKEN FCM_SERVICE_ACCOUNT_FILE GOOGLE_APPLICATION_CREDENTIALS`, and `.venv/bin/python serve.py`.
+In a subscribed receiver, enter `general_announcements` and use **Subscribe to topic**, **Unsubscribe from topic**, or **Refresh topics**. Topic removal preserves the individual token. The regular **Unsubscribe** deletes the FCM token. Topic operations show Firebase-confirmed results; errors leave membership unknown until refreshed.
 
-Startup reports `Topic helper: automatic via service account ...`. On the first topic operation, Google's library signs a service-account assertion and obtains an OAuth access token. The helper caches it in memory and refreshes it on demand within five minutes of expiry. Refresh is shared across the receiver threads; a Firebase 401 triggers one forced renewal and retry. No gcloud, interactive login, or manual token copying is needed. Invalid files, keys, missing dependencies, network failures, or IAM denial produce sanitized errors. The key must remain valid; revoked/disabled keys cannot be refreshed.
+Subscription buttons follow the current state: Subscribe is enabled when unsubscribed, and Unsubscribe when subscribed. Topic buttons follow the name currently entered. Both actions are disabled during requests; unknown topic membership requires Refresh topics before making changes.
 
-`GOOGLE_APPLICATION_CREDENTIALS` is also accepted as a path to a service-account JSON. Selection order is **manual `FCM_ACCESS_TOKEN` → `FCM_SERVICE_ACCOUNT_FILE` → `GOOGLE_APPLICATION_CREDENTIALS` → root `fcm-service-account.json` → gcloud**. A configured but invalid service-account file reports an error instead of silently falling back to another identity. Restart after changing environment variables. Key-file changes invalidate the in-memory credential cache. The default file is resolved beside `serve.py`, independently of the terminal's working directory.
+Confirmed topic subscriptions appear as a list with an Unsubscribe button beside each topic in both receivers and dashboard panels. Dashboard actions run through the matching open receiver without switching tabs. Keep that receiver connected; buttons disable while it is busy, disconnected or awaiting confirmation. Leaving a topic preserves the individual FCM token and other memberships.
 
-The optional `google-auth[requests]` library performs cryptographic signing and token exchange; the static server, manual mode and gcloud mode still need only Python's standard library. Credential files are never served, returned by an API, or logged; tokens are never persisted by this helper. The helper always uses Google's fixed OAuth token endpoint. Automatic refresh here applies to topic membership operations. Postman sends directly to Firebase and manages its own Bearer token; see `POSTMAN.md`.
+## Postman
 
-For a deployed ESB, prefer an attached service identity or workload identity over distributing private-key files. This JSON-key mode is for the local demo. Firebase authorization reference: <https://firebase.google.com/docs/cloud-messaging/send/v1-api>.
+Follow [POSTMAN.md](POSTMAN.md). Import the collection and empty environment in `postman/`. All four send/validation requests target:
 
-### Automatic authentication with Google Cloud CLI (alternative)
+```text
+https://fcm.googleapis.com/v1/projects/fcm-push-notification-f55e4/messages:send
+```
 
-Install [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) on the **same computer running Python**. Sign in once with an account allowed to manage FCM for this project:
+To generate a Google OAuth token for Postman using the same service account:
 
 ```powershell
-gcloud auth login
-gcloud config set project fcm-push-notification-f55e4
-Remove-Item Env:FCM_ACCESS_TOKEN -ErrorAction SilentlyContinue
-python serve.py
+pnpm --silent auth:token | Set-Clipboard
 ```
 
-For macOS/Linux, use `unset FCM_ACCESS_TOKEN` instead of `Remove-Item`, and `python3 serve.py`.
+Paste it into the private `google_access_token` Postman variable. This CLI deliberately outputs a token; never commit or share it. A copied Postman token does not refresh when the Node helper refreshes its own token. The guide also explains Postman's separate native OAuth auto-refresh option.
 
-The startup message should say `Topic helper: automatic via gcloud ...`. For every topic operation, Python privately runs `gcloud auth print-access-token`; Google Cloud CLI reuses or refreshes its stored credentials as needed. No token copying or server restart is required for normal access-token expiry. There is no background refresh timer, browser login popup, or app-managed credential file. Login credentials are stored by Google Cloud CLI in its normal user configuration outside this repository. Session expiry, revoked access, or an organization's reauthentication policy can still require another `gcloud auth login`. Cloud Shell login alone does not sign in your local computer.
+## Commands
 
-The helper runs the CLI non-interactively, captures its output without logging it, and keeps access tokens only in server process memory. Authentication guidance: <https://docs.cloud.google.com/sdk/docs/authenticate>.
+| Command | Purpose |
+|---|---|
+| `pnpm dev` | Vue/Vite development with hot updates and all five loopback ports |
+| `pnpm build` | Compile frontend to `dist/` |
+| `pnpm start` | Serve built output plus topic API on the same five ports |
+| `pnpm preview` | Alias for built-app serving; run build first |
+| `pnpm test` | Vitest server/auth/component/worker regression tests |
+| `pnpm test:watch` | Tests in watch mode |
+| `pnpm check` | Tests followed by production build |
+| `pnpm --silent auth:token` | Print a Google OAuth token for private use in Postman |
 
-### Manual token fallback
+This framework application must run over localhost; double-clicking HTML is no longer a supported startup method.
 
-Without local Google Cloud CLI, paste a token obtained from Cloud Shell into a hidden prompt in PowerShell 7:
+## Project structure
 
-```powershell
-$env:FCM_ACCESS_TOKEN = Read-Host 'FCM access token' -MaskInput
-python serve.py
+```text
+web/
+  index.html
+  src/
+    App.vue                    # Dashboard and receiver routing by port
+    dashboard.js               # Validated receiver commands and status mirroring
+    components/ReceiverPanel.vue
+    useReceiver.js             # Permission, subscription, message lifecycle
+    firebase.js                # Pinned gstatic SDK adapter
+    model.js                   # Validated bridge snapshots and bounded logs
+    style.css
+  public/
+    firebase-config.js         # Public config shared with worker
+    firebase-messaging-sw.js   # Root-scoped classic compat worker
+server/
+  index.js                     # Loopback Vite/built server; topic-only API
+  topics.js                    # Firebase topic REST adapter
+  auth.js                      # Server-only credentials and refresh
+  print-token.js               # CLI-only token generation
+postman/                       # Direct Firebase requests, no filled secrets
+tests/                         # Vitest, Vue Test Utils, Node HTTP and RSA tests
+vite.config.js
+package.json
+pnpm-lock.yaml
 ```
 
-Or supply the environment variable in your shell before starting Python:
+## Manual delivery checks
 
-```sh
-export FCM_ACCESS_TOKEN='<OAUTH_ACCESS_TOKEN>'
-python3 serve.py
-```
+1. Subscribe Apps 1 and 2 and verify their tokens differ.
+2. Send to App 1 from Postman; only App 1 should log it. Repeat for App 2. Test a visible foreground receiver, then hide it but keep it open for background delivery.
+3. Join `general_announcements` in Apps 1 and 2; leave Apps 3 and 4 outside it. Broadcast and confirm only members receive it.
+4. Leave the topic in App 1, refresh to confirm removal, and broadcast again. App 2 receives; App 1's direct token still works.
+5. Save App 1's old token, fully Unsubscribe it and confirm the token clears. Firebase should reject later sends to that token after revocation propagates. App 2 remains active. Reload App 1 and confirm no opt-in occurs.
 
-`FCM_ACCESS_TOKEN` overrides automatic authentication and **cannot refresh itself**. On expiry, stop the server, replace it, and restart—or clear it to switch to automatic authentication. Do not paste tokens into files or chat. Clear it with `Remove-Item Env:FCM_ACCESS_TOKEN` (PowerShell) or `unset FCM_ACCESS_TOKEN` (shell). Manual mode needs only Python's standard library.
+Logs are in memory, deduplicated and bounded to 100 messages per view. Foreground notifications log without a system notification. Firebase displays background notification payloads; the worker displays data-only payloads itself to avoid duplicates. Background payloads are forwarded only to same-origin receiver windows, then mirrored to the exact dashboard opener/origin. OS/browser settings affect system display. Closed receivers cannot forward live events.
 
-Restart `serve.py` after this update, reload the dashboard and receiver tabs, and click **Open receiver** to reconnect them. In a subscribed receiver, enter `general_announcements` and click **Subscribe to topic**. **Refresh topics** reads actual memberships from Firebase; **Unsubscribe from topic** leaves only that topic and preserves the FCM token. Confirmed memberships/errors mirror to the dashboard. No topic is automatically subscribed on startup or reload. Missing/expired helper credentials leave individual pushes working. A failed or timed-out action shows membership as unknown until refreshed; a successful change followed by a failed list still reports the confirmed action separately.
-
-The regular **Unsubscribe** button deletes the entire FCM token; it is different from leaving one topic. Topic lists are not stored as authoritative local state. The helper has no database and does not attempt background retries.
-
-## Manual topic broadcast test
-
-1. Subscribe Apps 1–4 to obtain their individual tokens. Subscribe only Apps 1 and 2 to `general_announcements`; refresh their topic lists and confirm membership. Apps 3 and 4 should have no membership in that topic.
-2. Send this request from Postman. The sending Bearer token stays in Postman; the topic helper's credential stays in the server environment.
-
-```http
-POST https://fcm.googleapis.com/v1/projects/fcm-push-notification-f55e4/messages:send
-Authorization: Bearer <OAUTH_2_ACCESS_TOKEN>
-Content-Type: application/json
-
-{
-  "message": {
-    "topic": "general_announcements",
-    "notification": {
-      "title": "Topic broadcast test",
-      "body": "Hello topic subscribers!"
-    },
-    "data": { "testId": "<UNIQUE_TEST_ID>" }
-  }
-}
-```
-
-3. Confirm Apps 1 and 2 receive it, while Apps 3 and 4 do not. Test visible foreground receivers and hidden/open background receivers.
-4. Leave the topic in App 1, refresh to confirm removal, and broadcast again. Only App 2 should receive the new broadcast after membership removal has taken effect. App 1 should still receive a direct push to its unchanged token. Messages already in flight can still arrive.
-5. Reload App 1 and refresh its topics; confirm it has not rejoined. Try an invalid topic name and missing/expired server credentials: errors must be clear and must not claim success.
-
-Topics are for general, non-sensitive broadcasts, not private account/order information. This local helper simulates the trusted ESB/Firebase boundary; it is not a production BO, ESB, authorization or retry implementation. API reference: <https://firebase.google.com/docs/cloud-messaging/manage-topic-subscriptions>.
-
-## Local checks
-
-```sh
-python -m unittest discover -s tests -v
-node --check app.js
-node --check firebase-messaging-sw.js
-node tests/check-topics.cjs
-node tests/check-messages.cjs
-```
-
-Use `.venv\Scripts\python.exe` instead of `python` to run tests with the optional auth dependency installed. Automated tests mock Firebase and Google credentials. See `VERIFICATION.md` for the latest actual checks and remaining live IAM requirements.
+See [VERIFICATION.md](VERIFICATION.md) for checks and limits. Firebase references: <https://firebase.google.com/docs/cloud-messaging/web/receive-messages> and <https://firebase.google.com/docs/cloud-messaging/manage-topic-subscriptions>.

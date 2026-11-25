@@ -8,3 +8,10 @@ __pycache__/
 /fcm-service-account.json
 /artifacts/verification/
 /postman/*.local.json
+node_modules/
+dist/
+coverage/
+*.log
+.idea/
+*.pem
+*.key

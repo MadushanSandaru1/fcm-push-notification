@@ -10,17 +10,14 @@ There is no localhost sending endpoint, local helper key, or OAuth-token HTTP en
 
 ## 1. Start the receiver project
 
-In PowerShell, from the project directory:
+Use Node.js 22.12+ and pnpm, then run from the project directory:
 
 ```powershell
-.\.venv\Scripts\python.exe serve.py
+pnpm install
+pnpm dev
 ```
 
-If the service-account dependency is missing, first run:
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-service-account.txt
-```
+For built output, use `pnpm build` followed by `pnpm start`. Python and gcloud are not required.
 
 Keep your Git-ignored `fcm-service-account.json` at the project root. The account needs **Firebase Cloud Messaging API Admin** (`roles/firebasecloudmessaging.admin`) on the target project, including topic-management permissions. Enable the Firebase Cloud Messaging API.
 
@@ -32,12 +29,12 @@ You can use the same service account for Postman. Generate a token privately and
 
 ```powershell
 Remove-Item Env:FCM_ACCESS_TOKEN -ErrorAction SilentlyContinue
-.\.venv\Scripts\python.exe -c "import topics; print(topics.get_access_token())" | Set-Clipboard
+pnpm --silent auth:token | Set-Clipboard
 ```
 
-Run this from the project directory. The root service-account file is automatically detected unless an explicit credential-file environment variable overrides it. The private key stays in Python; paste only the generated access token into Postman.
+Run this from the project directory. The root service-account file is automatically detected unless an explicit credential-file environment variable overrides it. The private key stays in Node; paste only the generated access token into Postman.
 
-A pasted token expires and must be replaced by rerunning this command. The topic helper's automatic renewal does not update a token previously copied into Postman. For native Postman OAuth auto-refresh, see step 7.
+A pasted token expires and must be replaced by rerunning this command. The Node topic helper's automatic renewal does not update a token previously copied into Postman. For native Postman OAuth auto-refresh, see step 7.
 
 ## 3. Import the supplied Postman files
 
@@ -131,7 +128,7 @@ For direct Firebase sends with Postman's built-in refresh, configure **OAuth 2.0
 4. Get a new token, sign in with an authorized account, choose **Use Token**, and enable **Auto-refresh access token**. Google must return a refresh token for this feature to work.
 5. Change the request authorization from the imported Bearer variable to this OAuth 2.0 configuration. Leave token sharing off.
 
-This is separate from the service-account authentication used by the topic helper. Normal Postman auto-refresh applies to manually sending requests, not monitors/Newman/Postman CLI. References: <https://learning.postman.com/docs/use/send-requests/authorization/oauth-20/> and <https://developers.google.com/identity/protocols/oauth2/web-server>.
+This is separate from the service-account authentication used by the Node topic helper. Normal Postman auto-refresh applies to manually sending requests, not monitors/Newman/Postman CLI. References: <https://learning.postman.com/docs/use/send-requests/authorization/oauth-20/> and <https://developers.google.com/identity/protocols/oauth2/web-server>.
 
 ## Token types
 
@@ -147,7 +144,7 @@ This is separate from the service-account authentication used by the topic helpe
 |---|---|
 | 401 | Generate/paste a new OAuth token or repair Postman's OAuth configuration. |
 | 403 | Check the sending account's IAM role, API enablement and OAuth scope. |
-| Topic membership 403 in receiver | Grant `roles/firebasecloudmessaging.admin` to the service account used by Python. |
+| Topic membership 403 in receiver | Grant `roles/firebasecloudmessaging.admin` to the service account used by Node. |
 | 404 / UNREGISTERED | Obtain and copy the receiver's current FCM token. |
 | 400 | Target exactly one of `token`/`topic`; data values must be strings. |
 | Success but no notification | Ensure validate_only is false, receiver is subscribed, correct topic/token is used, and tabs stay open for logs. |
