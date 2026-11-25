@@ -306,3 +306,22 @@ footer {
   padding: 7px 10px;
   font-size: 0.78rem;
 }
+.registration-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.registration-fields label { font-size: 0.8rem; color: #5b7180; }
+.registration-fields input {
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+  padding: 10px;
+  font: inherit;
+  border: 1px solid #d5e1e9;
+  border-radius: 8px;
+}
+.registration-fields input:focus-visible { outline: 3px solid #e8aa29; outline-offset: 3px; }
+.db-connected { color: #17603d; background: #e6f5eb; }
+.db-disconnected { color: #8a471d; background: #fff0e4; }

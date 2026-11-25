@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "google-auth-library": "^11.3.4",
+    "pg": "^8.23.1",
     "vue": "^3.5.46"
   },
   "devDependencies": {

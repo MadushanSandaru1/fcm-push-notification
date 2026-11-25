@@ -58,6 +58,35 @@ async function localServer(role = 8081, options = {}) {
 }
 
 describe("same-origin receiver API", () => {
+  it("serves database status and registration on the dashboard and receivers with exact-origin protection", async () => {
+    for (const role of [8080, 8081]) {
+      const deviceService = {
+        health: vi.fn(async () => ({ connected: true, error: null })),
+        register: vi.fn(async () => ({ p_status: 0, p_error_message: "Procedure rejected registration" })),
+        unsubscribe: vi.fn(async () => ({ p_status: 1, p_error_message: null })),
+      };
+      const request = await localServer(role, { deviceService });
+      const headers = { Origin: `http://localhost:${role}` };
+      const health = await request("/api/database/health", { method: "POST", body: {}, headers });
+      expect(health.status).toBe(200);
+      expect(JSON.parse(health.text).connected).toBe(true);
+      const body = { loginId: "1", customerId: "2", orgId: "3", token: "token", deviceId: "device" };
+      const result = await request("/api/devices/register", { method: "POST", body, headers });
+      expect(JSON.parse(result.text)).toEqual({ p_status: 0, p_error_message: "Procedure rejected registration" });
+      expect(deviceService.register).toHaveBeenCalledWith(body);
+      const inactive = await request("/api/devices/unsubscribe", { method: "POST", body, headers });
+      expect(JSON.parse(inactive.text)).toEqual({ p_status: 1, p_error_message: null });
+      expect(deviceService.unsubscribe).toHaveBeenCalledWith(body);
+      for (const path of ["/api/database/health", "/api/devices/register", "/api/devices/unsubscribe"]) {
+        expect((await request(path, { method: "POST", body, headers: { Origin: "http://evil.example" } })).status).toBe(403);
+        expect((await request(path, { method: "GET", headers })).status).toBe(405);
+      }
+      expect(deviceService.register).toHaveBeenCalledTimes(1);
+      expect(deviceService.unsubscribe).toHaveBeenCalledTimes(1);
+      expect(deviceService.health).toHaveBeenCalledTimes(1);
+    }
+  });
+
   it("forwards only exact receiver-origin requests and refuses browser OAuth input", async () => {
     const service = vi.fn(async () => ({ topics: ["general_announcements"] }));
     const request = await localServer(8081, { topicService: service });

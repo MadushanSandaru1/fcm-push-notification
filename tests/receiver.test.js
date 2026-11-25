@@ -158,6 +158,8 @@ describe("receiver subscriptions and lifecycle", () => {
     await test.controller.start();
     expect(test.panel.token).toBe("old-token");
     expect(test.sdk.getToken).not.toHaveBeenCalled();
+    expect(test.panel.deviceId).toBeTruthy();
+    expect(test.values.get("fcm-push-lab-device-id")).toBe(test.panel.deviceId);
     expect(
       test.request.mock.calls.every(([url]) => url.endsWith("/list")),
     ).toBe(true);
@@ -174,6 +176,7 @@ describe("receiver subscriptions and lifecycle", () => {
     await test.controller.unsubscribe();
     expect(test.sdk.deleteToken).toHaveBeenCalledOnce();
     expect(test.panel.token).toBe("");
+    expect(test.panel.unsubscribeId).toBeTruthy();
     expect(test.values.has(TOKEN_KEY)).toBe(false);
     expect(test.panel.permission).toBe("granted");
     test.controller.dispose();
@@ -193,6 +196,7 @@ describe("receiver subscriptions and lifecycle", () => {
     expect(test.panel.topics).toEqual([]);
     expect(test.panel.token).toBe("old-token");
     expect(test.sdk.deleteToken).not.toHaveBeenCalled();
+    expect(test.panel.unsubscribeId).toBe("");
     const count = test.request.mock.calls.length;
     await test.controller.topicAction("subscribe", "../bad");
     expect(test.request).toHaveBeenCalledTimes(count);
@@ -433,7 +437,7 @@ describe("Vue panel rendering", () => {
       props: { panel, receiver: true, ready: true },
     });
     expect(wrapper.findAll(".topic-list li")).toHaveLength(2);
-    await wrapper.find("input").setValue("different_topic");
+    await wrapper.find("input.topic-name").setValue("different_topic");
     await wrapper
       .find('button[aria-label="Unsubscribe from order_updates"]')
       .trigger("click");
@@ -542,7 +546,7 @@ describe("Vue panel rendering", () => {
     expect(button(wrapper, "Unsubscribe from topic").element.disabled).toBe(
       false,
     );
-    await wrapper.find("input").setValue(" other_topic ");
+    await wrapper.find("input.topic-name").setValue(" other_topic ");
     expect(button(wrapper, "Subscribe to topic").element.disabled).toBe(false);
     expect(button(wrapper, "Unsubscribe from topic").element.disabled).toBe(
       true,
@@ -580,12 +584,12 @@ describe("Vue panel rendering", () => {
       "Refresh topics to check the selected topic.",
     );
     panel.topicsKnown = true;
-    await wrapper.find("input").setValue("../invalid");
+    await wrapper.find("input.topic-name").setValue("../invalid");
     expect(button(wrapper, "Subscribe to topic").element.disabled).toBe(true);
     expect(button(wrapper, "Unsubscribe from topic").element.disabled).toBe(
       true,
     );
-    await wrapper.find("input").setValue("general_announcements");
+    await wrapper.find("input.topic-name").setValue("general_announcements");
     await wrapper.setProps({ busy: true });
     for (const name of [
       "Subscribe to topic",
@@ -593,7 +597,7 @@ describe("Vue panel rendering", () => {
       "Refresh topics",
     ])
       expect(button(wrapper, name).element.disabled).toBe(true);
-    expect(wrapper.find("input").element.disabled).toBe(true);
+    expect(wrapper.find("input.topic-name").element.disabled).toBe(true);
     await wrapper.setProps({ busy: false });
     panel.token = "";
     await nextTick();
@@ -637,12 +641,12 @@ describe("Vue panel rendering", () => {
     expect(
       dashboard.findAll("button").map((button) => button.text()),
     ).toContain("Open receiver ↗");
-    expect(dashboard.find("input").exists()).toBe(false);
+    expect(dashboard.find("input.topic-name").exists()).toBe(false);
     dashboard.unmount();
     const receiver = mount(ReceiverPanel, {
       props: { panel, receiver: true, ready: true },
     });
-    expect(receiver.find("input").element.disabled).toBe(true);
+    expect(receiver.find("input.topic-name").element.disabled).toBe(true);
     receiver.unmount();
   });
 });

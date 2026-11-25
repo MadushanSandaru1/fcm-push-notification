@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .env
 .env.*
+!.env.example
 *service-account*.json
 *firebase-adminsdk*.json
 /fcm-service-account.json

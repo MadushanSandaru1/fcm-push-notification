@@ -5,6 +5,8 @@ import { pathToFileURL } from "node:url";
 import { ROOT } from "./auth.js";
 import { ApiError } from "./errors.js";
 import { topicRequest } from "./topics.js";
+import { createDeviceService } from "./devices.js";
+import { loadEnvFile } from "node:process";
 
 const routes = new Map([
   ["/api/topics/list", "list"],
@@ -60,6 +62,7 @@ async function readJson(request) {
 export function createHandler({
   port,
   topicService = topicRequest,
+  deviceService,
   middleware,
   dist = resolve(ROOT, "dist"),
 }) {
@@ -79,20 +82,31 @@ export function createHandler({
         throw new ApiError(400, "Invalid URL.");
       }
       if (path.startsWith("/api/")) {
+        const deviceRoute = ["/api/database/health", "/api/devices/register", "/api/devices/unsubscribe"].includes(path);
         const action = routes.get(path);
-        if (!action) throw new ApiError(404, "Unknown API endpoint.");
+        if (!action && !deviceRoute) throw new ApiError(404, "Unknown API endpoint.");
         if (request.method !== "POST")
-          throw new ApiError(405, "Use POST for topic operations.");
+          throw new ApiError(405, "Use POST for API operations.");
         if (
-          port < 8081 ||
+          port < (deviceRoute ? 8080 : 8081) ||
           port > 8084 ||
           host !== `localhost:${port}` ||
           request.headers.origin !== `http://localhost:${port}`
         )
           throw new ApiError(
             403,
-            "Topic requests must come from this exact localhost receiver origin.",
+            "API requests must come from this exact localhost app origin.",
           );
+        if (deviceRoute) {
+          const data = await readJson(request);
+          if (!deviceService) throw new ApiError(503, "Database service unavailable.");
+          json(response, 200, path === "/api/database/health"
+            ? await deviceService.health()
+            : path === "/api/devices/unsubscribe"
+              ? await deviceService.unsubscribe(data)
+              : await deviceService.register(data));
+          return;
+        }
         json(
           response,
           200,
@@ -149,6 +163,7 @@ export async function startServers({
   production = false,
   ports = [8080, 8081, 8082, 8083, 8084],
   topicService,
+  deviceService = createDeviceService(),
 } = {}) {
   const servers = [];
   let vite;
@@ -163,6 +178,7 @@ export async function startServers({
       ),
     );
     await vite?.close();
+    await deviceService.close?.();
   };
   try {
     if (!production) {
@@ -174,7 +190,7 @@ export async function startServers({
     }
     for (const port of ports) {
       const server = http.createServer(
-        createHandler({ port, topicService, middleware: vite?.middlewares }),
+        createHandler({ port, topicService, deviceService, middleware: vite?.middlewares }),
       );
       server.requestTimeout = 30_000;
       server.headersTimeout = 10_000;
@@ -196,6 +212,8 @@ if (
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 ) {
   try {
+    try { loadEnvFile(resolve(ROOT, ".env")); }
+    catch (error) { if (error.code !== "ENOENT") throw error; }
     const runtime = await startServers({
       production: process.argv.includes("--production"),
     });

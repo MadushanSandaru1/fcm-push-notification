@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import { TOPIC_PATTERN } from "../model.js";
+import DeviceRegistration from "./DeviceRegistration.vue";
 
 const props = defineProps({
   panel: { type: Object, required: true },
@@ -133,6 +134,7 @@ function timestamp(value) {
     </button>
     <p v-if="panel.error" class="error" role="alert">{{ panel.error }}</p>
     <p v-if="notice" class="notice" role="status">{{ notice }}</p>
+    <DeviceRegistration :panel="panel" />
     <section aria-label="Topic subscriptions" class="topic-section">
       <div class="log-heading"><h3>Topic subscriptions</h3></div>
       <p class="topic-summary">{{ topicSummary }}</p>

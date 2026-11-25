@@ -113,8 +113,8 @@ describe("Firebase worker and Postman artifacts", () => {
     expect(adapter).toContain(
       "https://www.gstatic.com/firebasejs/13.4.0/firebase-messaging.js",
     );
-    expect(adapter).toContain(
-      "register('/firebase-messaging-sw.js', { scope: '/' })",
+    expect(adapter).toMatch(
+      /register\(\s*["']\/firebase-messaging-sw\.js["'],\s*\{\s*scope:\s*["']\/["']\s*\},?\s*\)/,
     );
   });
 });

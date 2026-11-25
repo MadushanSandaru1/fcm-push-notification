@@ -184,6 +184,7 @@ export function useReceiver(
         panel.topicNotice = "";
       }
       panel.token = token;
+      panel.unsubscribeId = "";
       panel.subscription = "Subscribed";
       try {
         store.setItem(TOKEN_KEY, token);
@@ -210,6 +211,7 @@ export function useReceiver(
         throw new Error(
           "Firebase did not confirm token deletion. Retry Unsubscribe.",
         );
+      panel.unsubscribeId = crypto.randomUUID();
       panel.token = "";
       panel.subscription = "Not subscribed";
       panel.topics = [];
@@ -237,6 +239,13 @@ export function useReceiver(
   }
 
   async function start() {
+    try {
+      const key = "fcm-push-lab-device-id";
+      panel.deviceId = store.getItem(key) || crypto.randomUUID();
+      store.setItem(key, panel.deviceId);
+    } catch {
+      panel.deviceId = "";
+    }
     panel.connection = dashboard ? "Dashboard linked" : "Standalone receiver";
     panel.subscription = "Checking…";
     publish();
