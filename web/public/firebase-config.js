@@ -7,7 +7,8 @@ globalThis.FCM_DEMO = {
     storageBucket: "fcm-push-notification-f55e4.firebasestorage.app",
     messagingSenderId: "320851126503",
     appId: "1:320851126503:web:4dd2d910cf173a9db4da42",
-    measurementId: "G-9NTG331GGX"
+    measurementId: "G-9NTG331GGX",
   },
-  vapidKey: "BMVVq1I8vzgwzMOb-FvaOwuvcbYKBpeYxyqP5Dt0NUMVvUF9Rz2grvE4zS9jiDqfgN1FL94AS-7V23wAuJ7qNT4"
+  vapidKey:
+    "BMVVq1I8vzgwzMOb-FvaOwuvcbYKBpeYxyqP5Dt0NUMVvUF9Rz2grvE4zS9jiDqfgN1FL94AS-7V23wAuJ7qNT4",
 };
