@@ -23,6 +23,8 @@ The four ports remain separate origins, preserving independent permissions, work
 
 Keep your existing **fcm-service-account.json** at the project root. It is Git-ignored, outside Vite's frontend root and blocked from HTTP access. Never place it in `web/public/`, frontend imports or a `VITE_*` variable.
 
+The committed [fcm-service-account.example.json](fcm-service-account.example.json) shows the expected structure using placeholders only. For setup, download a service-account JSON key from Firebase Console → Project settings → Service accounts → Generate new private key, then save the downloaded file at the project root as `fcm-service-account.json`. The example cannot authenticate. Keep real values only in the ignored file; never fill in or commit credentials in the example.
+
 The service account needs **Firebase Cloud Messaging API Admin** (`roles/firebasecloudmessaging.admin`) in project `fcm-push-notification-f55e4`, including topic-management permissions. Enable the Firebase Cloud Messaging API.
 
 `google-auth-library` performs signing and OAuth exchange. Tokens are cached server-side, renewed within five minutes of expiry, and shared across all receivers. A 401 causes at most one forced renewal/retry. OAuth values and private keys never enter the browser, dashboard messages, logs, or build.

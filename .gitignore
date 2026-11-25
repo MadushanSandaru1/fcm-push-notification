@@ -6,6 +6,7 @@ __pycache__/
 *service-account*.json
 *firebase-adminsdk*.json
 /fcm-service-account.json
+!/fcm-service-account.example.json
 /artifacts/verification/
 /postman/*.local.json
 node_modules/
