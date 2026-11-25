@@ -1,0 +1,197 @@
+{
+  "info": {
+    "name": "FCM Push Lab - direct Firebase sends",
+    "description": "Receiver app manages subscriptions and logs only. These requests go directly from Postman to Firebase using a Google OAuth access token. See POSTMAN.md. No private key is stored here.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Validate only - Individual",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{google_access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"validate_only\": true,\n  \"message\": {\n    \"token\": \"{{receiver_token}}\",\n    \"notification\": {\n      \"title\": \"Individual push test\",\n      \"body\": \"Hello from Postman\"\n    },\n    \"data\": {\n      \"testId\": \"{{$guid}}\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "https://fcm.googleapis.com/v1/projects/fcm-push-notification-f55e4/messages:send",
+        "description": "Direct Firebase HTTP v1 request. Supply a valid Google OAuth access token privately. validate_only validates without delivering."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Firebase accepted the request\", function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json()).to.have.property(\"name\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Send - Individual",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{google_access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"validate_only\": false,\n  \"message\": {\n    \"token\": \"{{receiver_token}}\",\n    \"notification\": {\n      \"title\": \"Individual push test\",\n      \"body\": \"Hello from Postman\"\n    },\n    \"data\": {\n      \"testId\": \"{{$guid}}\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "https://fcm.googleapis.com/v1/projects/fcm-push-notification-f55e4/messages:send",
+        "description": "Direct Firebase HTTP v1 request. Supply a valid Google OAuth access token privately. validate_only validates without delivering."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Firebase accepted the request\", function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json()).to.have.property(\"name\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validate only - Topic",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{google_access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"validate_only\": true,\n  \"message\": {\n    \"topic\": \"{{topic}}\",\n    \"notification\": {\n      \"title\": \"Topic push test\",\n      \"body\": \"Hello from Postman\"\n    },\n    \"data\": {\n      \"testId\": \"{{$guid}}\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "https://fcm.googleapis.com/v1/projects/fcm-push-notification-f55e4/messages:send",
+        "description": "Direct Firebase HTTP v1 request. Supply a valid Google OAuth access token privately. validate_only validates without delivering."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Firebase accepted the request\", function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json()).to.have.property(\"name\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Send - Topic",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{google_access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"validate_only\": false,\n  \"message\": {\n    \"topic\": \"{{topic}}\",\n    \"notification\": {\n      \"title\": \"Topic push test\",\n      \"body\": \"Hello from Postman\"\n    },\n    \"data\": {\n      \"testId\": \"{{$guid}}\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "https://fcm.googleapis.com/v1/projects/fcm-push-notification-f55e4/messages:send",
+        "description": "Direct Firebase HTTP v1 request. Supply a valid Google OAuth access token privately. validate_only validates without delivering."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Firebase accepted the request\", function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json()).to.have.property(\"name\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
