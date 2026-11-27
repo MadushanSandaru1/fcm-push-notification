@@ -88,8 +88,8 @@ export function createHandler({
         if (request.method !== "POST")
           throw new ApiError(405, "Use POST for API operations.");
         if (
-          port < (deviceRoute ? 8080 : 8081) ||
-          port > 8084 ||
+          port < (deviceRoute ? 6060 : 6061) ||
+          port > 6064 ||
           host !== `localhost:${port}` ||
           request.headers.origin !== `http://localhost:${port}`
         )
@@ -161,7 +161,7 @@ export function createHandler({
 
 export async function startServers({
   production = false,
-  ports = [8080, 8081, 8082, 8083, 8084],
+  ports = [6060, 6061, 6062, 6063, 6064],
   topicService,
   deviceService = createDeviceService(),
 } = {}) {
@@ -185,7 +185,7 @@ export async function startServers({
       const { createServer } = await import("vite");
       vite = await createServer({
         configFile: resolve(ROOT, "vite.config.js"),
-        server: { middlewareMode: true, ws: { host: "localhost", port: 8090 } },
+        server: { middlewareMode: true, ws: { host: "localhost", port: 6065 } },
       });
     }
     for (const port of ports) {
@@ -217,8 +217,8 @@ if (
     const runtime = await startServers({
       production: process.argv.includes("--production"),
     });
-    console.log("Dashboard: http://localhost:8080");
-    console.log("Receivers: http://localhost:8081 through :8084");
+    console.log("Dashboard: http://localhost:6060");
+    console.log("Receivers: http://localhost:6061 through :6064");
     console.log(
       "Topic auth: service account (automatic refresh), or manual FCM_ACCESS_TOKEN override",
     );

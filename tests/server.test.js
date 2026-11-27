@@ -11,7 +11,7 @@ afterEach(async () => {
   await Promise.all(cleanups.splice(0).map((close) => close()));
 });
 
-async function localServer(role = 8081, options = {}) {
+async function localServer(role = 6061, options = {}) {
   const server = http.createServer(createHandler({ port: role, ...options }));
   await new Promise((done) => server.listen(0, "127.0.0.1", done));
   cleanups.push(() => new Promise((done) => server.close(done)));
@@ -59,7 +59,7 @@ async function localServer(role = 8081, options = {}) {
 
 describe("same-origin receiver API", () => {
   it("serves database status and registration on the dashboard and receivers with exact-origin protection", async () => {
-    for (const role of [8080, 8081]) {
+    for (const role of [6060, 6061]) {
       const deviceService = {
         health: vi.fn(async () => ({ connected: true, error: null })),
         register: vi.fn(async () => ({ p_status: 0, p_error_message: "Procedure rejected registration" })),
@@ -89,11 +89,11 @@ describe("same-origin receiver API", () => {
 
   it("forwards only exact receiver-origin requests and refuses browser OAuth input", async () => {
     const service = vi.fn(async () => ({ topics: ["general_announcements"] }));
-    const request = await localServer(8081, { topicService: service });
+    const request = await localServer(6061, { topicService: service });
     const good = await request("/api/topics/list", {
       method: "POST",
       body: { token: "receiver" },
-      headers: { Origin: "http://localhost:8081" },
+      headers: { Origin: "http://localhost:6061" },
     });
     expect(good.status).toBe(200);
     expect(JSON.parse(good.text).topics).toEqual(["general_announcements"]);
@@ -101,9 +101,9 @@ describe("same-origin receiver API", () => {
     for (const headers of [
       {},
       { Origin: "null" },
-      { Origin: "http://localhost:8082" },
+      { Origin: "http://localhost:6062" },
       { Origin: "http://evil.example" },
-      { Origin: "http://localhost:8081", Host: "evil.example:8081" },
+      { Origin: "http://localhost:6061", Host: "evil.example:6061" },
     ]) {
       expect(
         (
@@ -119,13 +119,13 @@ describe("same-origin receiver API", () => {
   });
 
   it("denies topic operations on dashboard and has no send/token endpoints", async () => {
-    const request = await localServer(8080);
+    const request = await localServer(6060);
     expect(
       (
         await request("/api/topics/list", {
           method: "POST",
           body: {},
-          headers: { Origin: "http://localhost:8080" },
+          headers: { Origin: "http://localhost:6060" },
         })
       ).status,
     ).toBe(403);
@@ -143,8 +143,8 @@ describe("same-origin receiver API", () => {
 
   it("rejects malformed JSON, large bodies and incorrect content types", async () => {
     const service = vi.fn();
-    const request = await localServer(8081, { topicService: service });
-    const headers = { Origin: "http://localhost:8081" };
+    const request = await localServer(6061, { topicService: service });
+    const headers = { Origin: "http://localhost:6061" };
     expect(
       (
         await request("/api/topics/list", {
@@ -184,7 +184,7 @@ describe("production static serving", () => {
     await writeFile(resolve(dist, "index.html"), "<h1>Test</h1>");
     await writeFile(resolve(dist, "firebase-messaging-sw.js"), "/* worker */");
     await writeFile(resolve(dist, "assets/main.js"), "/* bundle */");
-    const request = await localServer(8080, { dist });
+    const request = await localServer(6060, { dist });
     const page = await request("/");
     expect(page.status).toBe(200);
     expect(page.headers["content-type"]).toContain("text/html");

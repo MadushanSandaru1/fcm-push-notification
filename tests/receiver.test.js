@@ -27,7 +27,7 @@ function receiver({
     removeItem: (key) => values.delete(key),
   };
   const win = new EventTarget();
-  win.location = { origin: "http://localhost:8081" };
+  win.location = { origin: "http://localhost:6061" };
   win.opener = { closed: false, postMessage: vi.fn() };
   if (storageBlocked)
     Object.defineProperty(win, "localStorage", {
@@ -108,13 +108,13 @@ describe("receiver subscriptions and lifecycle", () => {
     const send = (payload = data, overrides = {}) =>
       test.win.dispatchEvent(
         new MessageEvent("message", {
-          origin: "http://localhost:8080",
+          origin: "http://localhost:6060",
           source: test.win.opener,
           data: payload,
           ...overrides,
         }),
       );
-    send(data, { origin: "http://localhost:8082" });
+    send(data, { origin: "http://localhost:6062" });
     send(data, { source: {} });
     for (const change of [
       { channel: "other" },
@@ -136,7 +136,7 @@ describe("receiver subscriptions and lifecycle", () => {
         requestId: "command-1",
         ok: false,
       }),
-      "http://localhost:8080",
+      "http://localhost:6060",
     );
     test.controller.busy.value = false;
     send();
@@ -148,7 +148,7 @@ describe("receiver subscriptions and lifecycle", () => {
         requestId: "command-1",
         ok: true,
       }),
-      "http://localhost:8080",
+      "http://localhost:6060",
     );
     test.controller.dispose();
   });
@@ -244,7 +244,7 @@ describe("receiver subscriptions and lifecycle", () => {
     };
     test.nav.serviceWorker.dispatchEvent(
       new MessageEvent("message", {
-        origin: "http://localhost:8081",
+        origin: "http://localhost:6061",
         source: {},
         data,
       }),
@@ -252,7 +252,7 @@ describe("receiver subscriptions and lifecycle", () => {
     expect(test.panel.messages).toHaveLength(0);
     test.nav.serviceWorker.dispatchEvent(
       new MessageEvent("message", {
-        origin: "http://localhost:8082",
+        origin: "http://localhost:6062",
         source: test.sdk.registration.active,
         data,
       }),
@@ -260,7 +260,7 @@ describe("receiver subscriptions and lifecycle", () => {
     expect(test.panel.messages).toHaveLength(0);
     test.nav.serviceWorker.dispatchEvent(
       new MessageEvent("message", {
-        origin: "http://localhost:8081",
+        origin: "http://localhost:6061",
         source: test.sdk.registration.active,
         data,
       }),
@@ -283,7 +283,7 @@ describe("receiver subscriptions and lifecycle", () => {
     const before = test.win.opener.postMessage.mock.calls.length;
     test.win.dispatchEvent(
       new MessageEvent("message", {
-        origin: "http://localhost:8080",
+        origin: "http://localhost:6060",
         source: {},
         data,
       }),
@@ -291,7 +291,7 @@ describe("receiver subscriptions and lifecycle", () => {
     expect(test.win.opener.postMessage).toHaveBeenCalledTimes(before);
     test.win.dispatchEvent(
       new MessageEvent("message", {
-        origin: "http://localhost:8080",
+        origin: "http://localhost:6060",
         source: test.win.opener,
         data,
       }),
@@ -309,7 +309,7 @@ describe("receiver subscriptions and lifecycle", () => {
     expect(
       applySnapshot(
         panel,
-        { origin: "http://localhost:8082", source, data: snapshot },
+        { origin: "http://localhost:6062", source, data: snapshot },
         source,
       ),
     ).toBe(false);
@@ -348,7 +348,7 @@ describe("Vue panel rendering", () => {
     test.win.postMessage = vi.fn((data) =>
       test.win.dispatchEvent(
         new MessageEvent("message", {
-          origin: "http://localhost:8080",
+          origin: "http://localhost:6060",
           source: dashboardWindow,
           data,
         }),

@@ -21,7 +21,7 @@ For built output, use `pnpm build` followed by `pnpm start`. Python and gcloud a
 
 Keep your Git-ignored `fcm-service-account.json` at the project root. The account needs **Firebase Cloud Messaging API Admin** (`roles/firebasecloudmessaging.admin`) on the target project, including topic-management permissions. Enable the Firebase Cloud Messaging API.
 
-Open <http://localhost:8080>, then use **Open receiver** for each app you want to test. Click **Subscribe** in each receiver to obtain an FCM registration token. For a topic test, enter `general_announcements`, click **Subscribe to topic**, and confirm it with **Refresh topics**.
+Open <http://localhost:6060>, then use **Open receiver** for each app you want to test. Click **Subscribe** in each receiver to obtain an FCM registration token. For a topic test, enter `general_announcements`, click **Subscribe to topic**, and confirm it with **Refresh topics**.
 
 ## 2. Obtain a Google OAuth access token
 

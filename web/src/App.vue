@@ -5,7 +5,7 @@ import { DASHBOARD_ORIGIN, newPanel } from "./model.js";
 import { createDashboardBridge } from "./dashboard.js";
 import { useReceiver } from "./useReceiver.js";
 
-const number = Number(location.port) - 8080;
+const number = Number(location.port) - 6060;
 const isReceiver =
   location.hostname === "localhost" &&
   location.protocol === "http:" &&
@@ -21,7 +21,7 @@ let timer;
 
 function open(panel) {
   if (!isDashboard) {
-    panel.error = "Start pnpm dev and open http://localhost:8080.";
+    panel.error = "Start pnpm dev and open http://localhost:6060.";
     return;
   }
   bridge.open(panel);

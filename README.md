@@ -13,7 +13,7 @@ pnpm install
 pnpm dev
 ```
 
-Open <http://localhost:8080>. The same command serves receivers at ports **8081–8084**, all bound to loopback. Vite's development WebSocket uses port **8090**. Stop old Python/Node servers occupying these ports before starting.
+Open <http://localhost:6060>. The same command serves receivers at ports **6061–6064**, all bound to loopback. Vite's development WebSocket uses port **6065**. Stop old Python/Node servers occupying these ports before starting.
 
 Use **Open receiver** in each dashboard panel, then **Subscribe** in that top-level receiver tab. Notification permission must be requested by an explicit click. Keep receivers open for live dashboard updates. Browser permission and FCM subscription status are separate.
 

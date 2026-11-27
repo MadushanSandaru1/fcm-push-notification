@@ -57,7 +57,7 @@ it("sends a targeted command without focusing the receiver and requires a matchi
   expect(bridge.unsubscribe(panel, "news")).toBe(false);
   const reply = { type: "topic-result", requestId: "request-1", ok: true };
   for (const spoof of [
-    event(reply, { origin: "http://localhost:8082" }),
+    event(reply, { origin: "http://localhost:6062" }),
     event(reply, { source: {} }),
     event({ ...reply, requestId: "other" }),
     event({ ...reply, app: 2 }),

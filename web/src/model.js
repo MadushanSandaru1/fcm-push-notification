@@ -1,12 +1,12 @@
 export const CHANNEL = "fcm-push-lab-v1";
-export const DASHBOARD_ORIGIN = "http://localhost:8080";
+export const DASHBOARD_ORIGIN = "http://localhost:6060";
 export const TOKEN_KEY = "fcm-push-lab-subscription";
 export const TOPIC_PATTERN = /^[a-zA-Z0-9_.~%\-]{1,900}$/;
 
 export function newPanel(number) {
   return {
     number,
-    url: `http://localhost:${8080 + number}`,
+    url: `http://localhost:${6060 + number}`,
     connection: "Not connected",
     ready: false,
     busy: false,

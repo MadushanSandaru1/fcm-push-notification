@@ -4,7 +4,7 @@
 
 - Vue 3 single-file components and composables replace the old DOM script.
 - Vite builds only `web/` into `dist/`; the root credential file is outside the frontend source/public directory.
-- One Node process serves the dashboard on 8080 and receivers on 8081–8084, all on loopback. Development also uses WebSocket port 8090.
+- One Node process serves the dashboard on 6060 and receivers on 6061–6064, all on loopback. Development also uses WebSocket port 6065.
 - The Node topic adapter replaces Python. Google's Node auth library manages the shared service-account cache, renewal within five minutes of expiry, and one forced renewal/retry after a Firebase 401.
 - Postman still sends directly to Firebase. No local push sender or HTTP OAuth-token endpoint exists.
 - Firebase JS SDK 13.4.0 remains pinned to gstatic, including classic worker compat scripts.
@@ -37,9 +37,9 @@ The tests cover:
 | Node service-account exchange against Google OAuth | Passed; no credentials printed |
 | Node access-token cache reuse and forced renewal | Passed |
 | Node topic adapter reading App 2's actual Firebase membership | Passed |
-| Development serving on 8080–8084 | Passed |
+| Development serving on 6060–6064 | Passed |
 | Development private-file and backend-source denial | Passed, including encoded and /@fs key paths |
-| Production built-app serving on 8080–8084 | Passed |
+| Production built-app serving on 6060–6064 | Passed |
 | Production root worker/config and private-file denial | Passed |
 | Production topic HTTP endpoint → Firebase | Passed |
 | Built Vue dashboard in Chrome | Four panels rendered |

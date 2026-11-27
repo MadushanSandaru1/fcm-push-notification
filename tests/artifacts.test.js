@@ -28,7 +28,7 @@ describe("Firebase worker and Postman artifacts", () => {
           }),
         },
         self: {
-          location: { origin: "http://localhost:8081" },
+          location: { origin: "http://localhost:6061" },
           registration: {
             showNotification: async (title, data) =>
               notifications.push({ title, ...data }),
@@ -36,11 +36,11 @@ describe("Firebase worker and Postman artifacts", () => {
           clients: {
             matchAll: async () => [
               {
-                url: "http://localhost:8081/",
+                url: "http://localhost:6061/",
                 postMessage: (message) => messages.push(message),
               },
               {
-                url: "http://localhost:8082/",
+                url: "http://localhost:6062/",
                 postMessage() {
                   throw new Error("Wrong origin");
                 },
