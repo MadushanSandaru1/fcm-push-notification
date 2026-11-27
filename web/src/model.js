@@ -3,6 +3,11 @@ export const DASHBOARD_ORIGIN = "http://localhost:6060";
 export const TOKEN_KEY = "fcm-push-lab-subscription";
 export const TOPIC_PATTERN = /^[a-zA-Z0-9_.~%\-]{1,900}$/;
 
+// Accept both JSON-decoded newlines and literal backslash-n from senders.
+export function messageBody(body) {
+  return String(body ?? "").replace(/\\r\\n|\\n/g, "\n");
+}
+
 export function newPanel(number) {
   return {
     number,

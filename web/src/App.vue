@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive } from "vue";
 import ReceiverPanel from "./components/ReceiverPanel.vue";
+import PushToasts from "./components/PushToasts.vue";
 import { DASHBOARD_ORIGIN, newPanel } from "./model.js";
 import { createDashboardBridge } from "./dashboard.js";
 import { useReceiver } from "./useReceiver.js";
@@ -55,6 +56,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <PushToasts :panels="panels" />
   <header>
     <span class="eyebrow">FIREBASE CLOUD MESSAGING</span>
     <h1>

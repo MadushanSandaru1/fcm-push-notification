@@ -187,6 +187,75 @@ describe("receiver subscriptions and lifecycle", () => {
     reloaded.controller.dispose();
   });
 
+  it("removes all Firebase topics before deleting the token and allows manual rejoining after resubscribe", async () => {
+    const test = receiver();
+    await test.controller.start();
+    await test.controller.topicAction("subscribe", "general_announcements");
+    // Include a membership missing from the displayed state.
+    test.topics.add("order_updates");
+    test.sdk.deleteToken.mockImplementation(async () => {
+      expect([...test.topics]).toEqual([]);
+      return true;
+    });
+    await test.controller.unsubscribe();
+    expect(test.panel.token).toBe("");
+    expect(test.panel.topics).toEqual([]);
+    test.request.mockClear();
+    await test.controller.subscribe();
+    expect(test.panel.topics).toEqual([]);
+    expect(test.panel.topicsKnown).toBe(true);
+    expect(test.request.mock.calls.every(([url]) => url.endsWith("/list"))).toBe(true);
+    const wrapper = mount(ReceiverPanel, {
+      props: { panel: test.panel, receiver: true, ready: true },
+    });
+    expect(wrapper.findAll("button").find((item) => item.text() === "Subscribe to topic").element.disabled).toBe(false);
+    await test.controller.topicAction("subscribe", "general_announcements");
+    expect(test.panel.topics).toEqual(["general_announcements"]);
+    wrapper.unmount();
+    test.controller.dispose();
+  });
+
+  it("keeps the token when topic discovery fails and supports retrying individual unsubscribe", async () => {
+    const test = receiver();
+    await test.controller.start();
+    await test.controller.topicAction("subscribe", "news");
+    test.fail(true);
+    await test.controller.unsubscribe();
+    expect(test.sdk.deleteToken).not.toHaveBeenCalled();
+    expect(test.panel.token).toBe("old-token");
+    expect(test.panel.unsubscribeId).toBe("");
+    expect(test.panel.error).toContain("Cannot remove topic subscriptions");
+    expect(test.panel.topicNotice).toBe("");
+    test.fail(false);
+    await test.controller.unsubscribe();
+    expect([...test.topics]).toEqual([]);
+    expect(test.panel.token).toBe("");
+    test.controller.dispose();
+  });
+
+  it("keeps the token after partial topic cleanup and retries remaining memberships", async () => {
+    const test = receiver();
+    test.topics.add("first");
+    test.topics.add("second");
+    await test.controller.start();
+    const request = test.request.getMockImplementation();
+    test.request.mockImplementation(async (url, options) => {
+      if (url.endsWith("/unsubscribe") && JSON.parse(options.body).topic === "second")
+        return { ok: false, json: async () => ({ error: "Firebase unavailable" }) };
+      return request(url, options);
+    });
+    await test.controller.unsubscribe();
+    expect(test.sdk.deleteToken).not.toHaveBeenCalled();
+    expect(test.panel.token).toBe("old-token");
+    expect(test.panel.topics).toEqual(["second"]);
+    expect(test.panel.error).toContain("Topic cleanup failed");
+    test.request.mockImplementation(request);
+    await test.controller.unsubscribe();
+    expect([...test.topics]).toEqual([]);
+    expect(test.panel.token).toBe("");
+    test.controller.dispose();
+  });
+
   it("leaves topics without deleting the individual token and recovers from errors", async () => {
     const test = receiver();
     await test.controller.start();

@@ -207,6 +207,27 @@ export function useReceiver(
     panel.error = "";
     publish();
     try {
+      // Read Firebase rather than relying on the possibly stale displayed list.
+      // Keep the token available for retry until every topic removal succeeds.
+      if (panel.token) {
+        panel.topicNotice = "Removing all topic subscriptions…";
+        await loadTopics();
+        if (!panel.topicsKnown) {
+          panel.topicNotice = "";
+          throw new Error(`Cannot remove topic subscriptions: ${panel.topicError}`);
+        }
+        try {
+          for (const topic of [...panel.topics]) {
+            await topicRequest("unsubscribe", topic);
+            panel.topics = panel.topics.filter((name) => name !== topic);
+          }
+        } catch (error) {
+          await loadTopics();
+          throw new Error(`Topic cleanup failed. Retry Unsubscribe. ${formatError(error)}`);
+        } finally {
+          panel.topicNotice = "";
+        }
+      }
       if (!(await sdk.deleteToken()))
         throw new Error(
           "Firebase did not confirm token deletion. Retry Unsubscribe.",
@@ -218,7 +239,7 @@ export function useReceiver(
       panel.topicsKnown = false;
       panel.topicError = "";
       panel.topicNotice =
-        "FCM token deleted. No automatic re-subscription will occur.";
+        "All topics unsubscribed and FCM token deleted. Subscribe again, then choose topics manually.";
       try {
         store.removeItem(TOKEN_KEY);
       } catch {

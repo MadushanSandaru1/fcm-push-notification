@@ -2,7 +2,7 @@
 
 A **pnpm + Vue 3 + Vite** test app with a Node.js helper for topic subscriptions and optional PostgreSQL device registration. No Python, Analytics or message-sending backend.
 
-The app manages individual/topic subscriptions and displays received messages. **Postman sends directly to Firebase HTTP v1**. Firebase JS SDK **13.4.0** stays pinned to the gstatic CDN in both the browser adapter and classic service worker.
+The app manages individual/topic subscriptions and displays received messages. New messages appear as stacked toasts in receivers and the dashboard, each closing automatically after five seconds or via its close button. Closing a toast preserves the Received messages history. Message bodies display actual newlines and literal `\n` as line breaks. **Postman sends directly to Firebase HTTP v1**. Firebase JS SDK **13.4.0** stays pinned to the gstatic CDN in both the browser adapter and classic service worker.
 
 ## Quick start
 
@@ -61,7 +61,7 @@ Remove-Item Env:GOOGLE_APPLICATION_CREDENTIALS -ErrorAction SilentlyContinue
 pnpm dev
 ```
 
-In a subscribed receiver, enter `general_announcements` and use **Subscribe to topic**, **Unsubscribe from topic**, or **Refresh topics**. Topic removal preserves the individual token. The regular **Unsubscribe** deletes the FCM token. Topic operations show Firebase-confirmed results; errors leave membership unknown until refreshed.
+In a subscribed receiver, enter `general_announcements` and use **Subscribe to topic**, **Unsubscribe from topic**, or **Refresh topics**. Topic removal preserves the individual token. The regular **Unsubscribe** fetches the current Firebase memberships, unsubscribes from every topic, then deletes the FCM token. If topic cleanup fails, the token remains available for retry. After subscribing to individual push again, subscribe to the desired topics manually; previous topics are not restored automatically. Topic operations show Firebase-confirmed results; errors leave membership unknown until refreshed.
 
 Subscription buttons follow the current state: Subscribe is enabled when unsubscribed, and Unsubscribe when subscribed. Topic buttons follow the name currently entered. Both actions are disabled during requests; unknown topic membership requires Refresh topics before making changes.
 

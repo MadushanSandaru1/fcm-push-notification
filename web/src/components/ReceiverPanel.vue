@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from "vue";
-import { TOPIC_PATTERN } from "../model.js";
+import { TOPIC_PATTERN, messageBody } from "../model.js";
 import DeviceRegistration from "./DeviceRegistration.vue";
 
 const props = defineProps({
@@ -193,7 +193,8 @@ function timestamp(value) {
         </div>
         <p class="topic-help">
           Topic actions use the local Node helper. Leaving a topic preserves
-          your individual FCM token.
+          your individual FCM token. Individual Unsubscribe removes all topics.
+          After subscribing again, choose your topics manually.
         </p>
       </template>
       <p v-if="panel.topicError" class="error" role="alert">
@@ -216,7 +217,7 @@ function timestamp(value) {
       <li v-if="!panel.messages.length" class="empty">Waiting for a push…</li>
       <li v-for="message in [...panel.messages].reverse()" :key="message.id">
         <strong class="message-title">{{ message.title }}</strong>
-        <p class="message-body">{{ message.body }}</p>
+        <p class="message-body">{{ messageBody(message.body) }}</p>
         <div class="message-meta">
           {{ timestamp(message.timestamp) }} · {{ message.mode }}
         </div>
